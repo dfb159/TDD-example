@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "inventory-app"
+version = "0.1.0"
+description = "An inventory app to track what you got left"
+authors = ["Jonathan Sigrist <jonathan.sigrist@xitaso.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
