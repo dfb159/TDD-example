@@ -1,4 +1,5 @@
 """Tests for the basic Inventory API."""
+from pytest import approx
 from inventory_app.inventory_manager import InventoryManager
 
 
@@ -34,7 +35,7 @@ def test__add_item_quantity():
     inventory = InventoryManager()
     inventory.add("milk", 3.3)
     assert len(inventory) == 1
-    assert inventory["milk"] == 3.3
+    assert inventory["milk"] == approx(3.3)
 
 
 def test__set_item_quantity():
@@ -42,7 +43,7 @@ def test__set_item_quantity():
     inventory = InventoryManager()
     inventory["milk"] = 2.4
     assert len(inventory) == 1
-    assert inventory["milk"] == 2.4
+    assert inventory["milk"] == approx(2.4)
 
 
 def test__remove_item():
@@ -84,8 +85,18 @@ def test__remove_item_quantity():
     inventory.add("milk", 4.2)
     assert len(inventory) == 1
     inventory.remove("milk", 1.8)
-    assert inventory["milk"] == 2.4
+    assert inventory["milk"] == approx(2.4)
     assert len(inventory) == 1
+
+
+def test__remove_all_item_quantity():
+    """Removing all items with huge quantity."""
+    inventory = InventoryManager()
+    inventory.add("milk", 4.2)
+    assert len(inventory) == 1
+    inventory.remove("milk", 7.3)
+    assert inventory["milk"] == 0
+    assert len(inventory) == 0
 
 
 def test__remove_item_all():

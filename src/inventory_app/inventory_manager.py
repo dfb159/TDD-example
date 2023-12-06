@@ -3,27 +3,41 @@
 
 class InventoryManager():
     """The Inventory Manager will persist items in its lifetime."""
-    inventory: list[str]
+    inventory: dict[str, float]
 
     def __init__(self) -> None:
-        self.inventory = []
+        self.inventory = {}
 
     def __len__(self):
         return len(self.inventory)
 
-    def add(self, item: str):
+    def __getitem__(self, item: str):
+        return self.inventory[item] if item in self.inventory else 0
+
+    def __setitem__(self, item: str, quantity: float):
+        self.inventory[item] = quantity
+
+    def add(self, item: str, quantity: float = 1):
         """Adds an item to the inventory."""
         if item not in self.inventory:
-            self.inventory.append(item)
+            self.inventory[item] = quantity
+        else:
+            self.inventory[item] += quantity
 
-    def remove(self, item: str):
+    def remove(self, item: str, quantity: float or None = None):
         """Removes the given item from the inventory."""
-        if item in self.inventory:
-            self.inventory.remove(item)
+        if item not in self.inventory:
+            return
+
+        stored = self.inventory[item]
+        if quantity is None or stored <= quantity:
+            del self.inventory[item]
+        else:
+            self.inventory[item] -= quantity
 
     def items(self):
         """List of all items of this inventory."""
-        return self.inventory
+        return self.inventory.keys()
 
 
 # if __name__=="__main__":
