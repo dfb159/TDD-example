@@ -7,18 +7,32 @@ def test__init_empty_manager():
     """A newly instanciated manager should be empty."""
     inventory = InventoryManager()
     assert len(inventory) == 0
+    assert "milk" not in inventory
+    assert inventory.items() == []
 
 
 def test__add_items():
     """Adding items to the manager should be persisted."""
     inventory = InventoryManager()
     inventory.add("milk")
+    assert "milk" in inventory
+    assert "sugar" not in inventory
     assert len(inventory) == 1
     inventory.add("sugar")
+    assert "sugar" in inventory
     assert len(inventory) == 2
     assert set(inventory.items()) == set(["milk", "sugar"])
     assert inventory["milk"] == 1
     assert inventory["sugar"] == 1
+
+
+def test__add_zero():
+    """Adding items to the manager should be persisted."""
+    inventory = InventoryManager()
+    inventory.add("milk", 0)
+    assert "milk" not in inventory
+    assert len(inventory) == 0
+    assert inventory["milk"] == 0
 
 
 def test__add_items_twice():
@@ -26,6 +40,7 @@ def test__add_items_twice():
     inventory = InventoryManager()
     inventory.add("milk")
     inventory.add("milk")
+    assert "milk" in inventory
     assert len(inventory) == 1
     assert inventory["milk"] == 2
 
@@ -34,6 +49,7 @@ def test__add_item_quantity():
     """Add specific quantity will update items."""
     inventory = InventoryManager()
     inventory.add("milk", 3.3)
+    assert "milk" in inventory
     assert len(inventory) == 1
     assert inventory["milk"] == approx(3.3)
 
@@ -42,6 +58,7 @@ def test__set_item_quantity():
     """Set specific quantity will update items."""
     inventory = InventoryManager()
     inventory["milk"] = 2.4
+    assert "milk" in inventory
     assert len(inventory) == 1
     assert inventory["milk"] == approx(2.4)
 
@@ -53,6 +70,7 @@ def test__remove_item():
     assert len(inventory) == 1
     inventory.remove("milk")
     assert len(inventory) == 0
+    assert "milk" not in inventory
 
 
 def test__remove_item_then_add():
@@ -60,12 +78,16 @@ def test__remove_item_then_add():
     inventory = InventoryManager()
     inventory.add("milk")
     assert len(inventory) == 1
+    assert "milk" in inventory
     inventory.remove("milk")
     assert len(inventory) == 0
+    assert "milk" not in inventory
     inventory.add("milk")
     assert len(inventory) == 1
+    assert "milk" in inventory
     inventory.remove("milk")
     assert len(inventory) == 0
+    assert "milk" not in inventory
 
 
 def test__remove_item_twice():
@@ -73,8 +95,10 @@ def test__remove_item_twice():
     inventory = InventoryManager()
     inventory.add("milk")
     assert len(inventory) == 1
+    assert "milk" in inventory
     inventory.remove("milk")
     inventory.remove("milk")
+    assert "milk" not in inventory
     assert len(inventory) == 0
     assert inventory["milk"] == 0
 
@@ -83,9 +107,11 @@ def test__remove_item_quantity():
     """Removing an item with specific quantity."""
     inventory = InventoryManager()
     inventory.add("milk", 4.2)
+    assert "milk" in inventory
     assert len(inventory) == 1
     inventory.remove("milk", 1.8)
     assert inventory["milk"] == approx(2.4)
+    assert "milk" in inventory
     assert len(inventory) == 1
 
 
@@ -93,9 +119,11 @@ def test__remove_all_item_quantity():
     """Removing all items with huge quantity."""
     inventory = InventoryManager()
     inventory.add("milk", 4.2)
+    assert "milk" in inventory
     assert len(inventory) == 1
     inventory.remove("milk", 7.3)
     assert inventory["milk"] == 0
+    assert "milk" not in inventory
     assert len(inventory) == 0
 
 
@@ -103,8 +131,10 @@ def test__remove_item_all():
     """Removing complete item."""
     inventory = InventoryManager()
     inventory.add("milk", 4.2)
+    assert "milk" in inventory
     assert len(inventory) == 1
     inventory.remove("milk")
+    assert "milk" not in inventory
     assert len(inventory) == 0
 
 
