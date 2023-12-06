@@ -17,6 +17,9 @@ class InventoryManager():
     def __setitem__(self, item: str, quantity: float):
         self.inventory[item] = quantity
 
+    def __contains__(self, item: str):
+        return item in self.inventory
+
     def add(self, item: str, quantity: float = 1):
         """Adds an item to the inventory."""
         if item not in self.inventory:
@@ -24,7 +27,7 @@ class InventoryManager():
         else:
             self.inventory[item] += quantity
 
-    def remove(self, item: str, quantity: float or None = None):
+    def remove(self, item: str, quantity: float | None = None):
         """Removes the given item from the inventory."""
         if item not in self.inventory:
             return
@@ -38,8 +41,3 @@ class InventoryManager():
     def items(self):
         """List of all items of this inventory."""
         return self.inventory.keys()
-
-
-# if __name__=="__main__":
-#     i = InventoryManager()
-#     i.add(1)
