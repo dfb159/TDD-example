@@ -1,4 +1,5 @@
 """Tests for the basic Inventory API."""
+import json5
 from pytest import approx, raises
 from inventory_app.inventory_manager import InventoryManager
 
@@ -195,3 +196,40 @@ def test__unknown_item():
     """If the item does not exist, then the amount is zero."""
     inventory = InventoryManager()
     assert inventory["milk"] == 0
+
+
+def test__load_from_disk():
+    """Loads an existing file in the correct format."""
+    inventory = InventoryManager("persistance/valid")
+    assert inventory.items() == set(["milk", "sugar", "cheese"])
+    assert inventory["milk"] == 3
+    assert inventory["sugar"] == approx(1.4)
+    assert inventory["cheese"] == 1
+
+
+def test__load_wrong_from_disk():
+    """Loads an existing file in an invalid format."""
+    raises(InvalidFileFormat, lambda: InventoryManager("persistance/invalid"))
+
+
+def test__save_to_disk():
+    """Saves a manager to the disk."""
+    inventory = InventoryManager()
+    inventory.add("milk", 3)
+    inventory.add("sugar", 1.4)
+    inventory.add("cheese", 1)
+    inventory.save("tmp/save")
+
+    with open("tmp/save.json5", 'r', encoding="utf-8") as f1, open("persistance/valid.json5", 'r', encoding="utf-8") as f2:
+        assert json5.load(f1) == json5.load(f2)
+
+
+def test__disk_roundtrip():
+    """Saves and loads a manager. Check if same."""
+    inventory = InventoryManager()
+    inventory.add("milk", 3)
+    inventory.add("sugar", 1.4)
+    inventory.save("tmp/roundtrip")
+
+    loaded_inventory = InventoryManager("tmp/roundtrip")
+    assert inventory == loaded_inventory
