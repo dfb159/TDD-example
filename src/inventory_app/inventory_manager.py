@@ -15,20 +15,33 @@ class InventoryManager():
         return self.inventory[item] if item in self.inventory else 0
 
     def __setitem__(self, item: str, quantity: float):
-        self.inventory[item] = quantity
+        if quantity <= 0:
+            self.remove(item)
+        else:
+            self.inventory[item] = quantity
 
     def __contains__(self, item: str):
         return item in self.inventory
 
     def add(self, item: str, quantity: float = 1):
         """Adds an item to the inventory."""
-        if item not in self.inventory:
+        if quantity == 0:
+            return
+
+        if quantity < 0:
+            self.remove(item, -quantity)
+        elif item not in self.inventory:
             self.inventory[item] = quantity
         else:
             self.inventory[item] += quantity
 
     def remove(self, item: str, quantity: float | None = None):
         """Removes the given item from the inventory."""
+        if quantity is not None:
+            if quantity < 0:  # nested if: Pylint does not get it otherwise
+                self.add(item, -quantity)
+                return
+
         if item not in self.inventory:
             return
 
