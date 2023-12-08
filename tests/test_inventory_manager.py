@@ -1,4 +1,5 @@
 """Tests for the basic Inventory API."""
+import shutil
 import json5
 from pytest import approx, raises
 from inventory_app.inventory_manager import InventoryManager, InvalidFileFormat
@@ -234,3 +235,16 @@ def test__disk_roundtrip():
 
     loaded_inventory = InventoryManager("tests/tmp/roundtrip")
     assert inventory == loaded_inventory
+
+
+def test__live_edit_will_persist():
+    """A live edit with statement will safe the inventory on exit."""
+    shutil.copyfile("tests/persistance/valid.json5", "tests/tmp/live.json5")
+
+    with InventoryManager.live("tests/tmp/live") as inventory:
+        inventory.add("milk", 2)
+        inventory.remove("sugar", 0.3)
+
+    with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, \
+            open("tests/persistance/live.json5", 'r', encoding="utf-8") as f2:
+        assert json5.load(f1) == json5.load(f2)
