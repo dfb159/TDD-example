@@ -1,7 +1,7 @@
 """Tests for the basic Inventory API."""
 import json5
 from pytest import approx, raises
-from inventory_app.inventory_manager import InventoryManager
+from inventory_app.inventory_manager import InventoryManager, InvalidFileFormat
 
 
 def test__init_empty_manager():
@@ -200,7 +200,7 @@ def test__unknown_item():
 
 def test__load_from_disk():
     """Loads an existing file in the correct format."""
-    inventory = InventoryManager("persistance/valid")
+    inventory = InventoryManager("tests/persistance/valid")
     assert inventory.items() == set(["milk", "sugar", "cheese"])
     assert inventory["milk"] == 3
     assert inventory["sugar"] == approx(1.4)
@@ -209,7 +209,7 @@ def test__load_from_disk():
 
 def test__load_wrong_from_disk():
     """Loads an existing file in an invalid format."""
-    raises(InvalidFileFormat, lambda: InventoryManager("persistance/invalid"))
+    raises(InvalidFileFormat, lambda: InventoryManager("tests/persistance/invalid"))
 
 
 def test__save_to_disk():
@@ -218,9 +218,10 @@ def test__save_to_disk():
     inventory.add("milk", 3)
     inventory.add("sugar", 1.4)
     inventory.add("cheese", 1)
-    inventory.save("tmp/save")
+    inventory.save("tests/tmp/save")
 
-    with open("tmp/save.json5", 'r', encoding="utf-8") as f1, open("persistance/valid.json5", 'r', encoding="utf-8") as f2:
+    with open("tests/tmp/save.json5", 'r', encoding="utf-8") as f1, \
+            open("tests/persistance/valid.json5", 'r', encoding="utf-8") as f2:
         assert json5.load(f1) == json5.load(f2)
 
 
@@ -229,7 +230,7 @@ def test__disk_roundtrip():
     inventory = InventoryManager()
     inventory.add("milk", 3)
     inventory.add("sugar", 1.4)
-    inventory.save("tmp/roundtrip")
+    inventory.save("tests/tmp/roundtrip")
 
-    loaded_inventory = InventoryManager("tmp/roundtrip")
+    loaded_inventory = InventoryManager("tests/tmp/roundtrip")
     assert inventory == loaded_inventory
