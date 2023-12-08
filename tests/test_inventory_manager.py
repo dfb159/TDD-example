@@ -243,7 +243,7 @@ def test__live_edit_will_persist():
 
     with InventoryManager("tests/tmp/live") as inventory:
         inventory.add("milk", 2)
-        inventory.remove("sugar", 0.3)
+        inventory.remove("sugar", 0.25)
 
     with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, \
             open("tests/persistance/live.json5", 'r', encoding="utf-8") as f2:

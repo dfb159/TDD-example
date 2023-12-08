@@ -4,7 +4,8 @@
 from io import TextIOWrapper
 from numbers import Number
 import os
-from typing import Self
+from types import TracebackType
+from typing import Optional, Self, Type
 import json5
 
 
@@ -42,11 +43,13 @@ def _check_inner_dict(data: dict) -> dict[str, float]:
 class InventoryManager():
     """The Inventory Manager will persist items in its lifetime."""
     inventory: dict[str, float]
+    path: str | None
 
-    def __init__(self, path: str | None = None) -> None:
+    def __init__(self, path: Optional[str] = None) -> None:
         self.inventory = {}
-        if path:
-            with open(_fullpath(path), 'r', encoding="utf-8") as file:
+        self.path = path
+        if self.path:
+            with open(_fullpath(self.path), 'r', encoding="utf-8") as file:
                 self.inventory = _load_inventory(file)
 
     def __len__(self):
@@ -67,6 +70,19 @@ class InventoryManager():
     def __eq__(self, other: Self):
         return self.inventory == other.inventory
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> bool:
+        if exc_value is not None:
+            return False
+
+        if self.path is not None:
+            self.save(self.path)
+
+        return True
+
     def add(self, item: str, quantity: float = 1):
         """Adds an item to the inventory."""
         if quantity == 0:
@@ -79,7 +95,7 @@ class InventoryManager():
         else:
             self.inventory[item] += quantity
 
-    def remove(self, item: str, quantity: float | None = None):
+    def remove(self, item: str, quantity: Optional[float] = None):
         """Removes the given item from the inventory."""
         if quantity is not None:
             if quantity < 0:  # nested if: Pylint does not get it otherwise
