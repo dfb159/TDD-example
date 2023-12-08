@@ -241,10 +241,28 @@ def test__live_edit_will_persist():
     """A live edit with statement will safe the inventory on exit."""
     shutil.copyfile("tests/persistance/valid.json5", "tests/tmp/live.json5")
 
-    with InventoryManager("tests/tmp/live") as inventory:
+    with LiveInventoryManager("tests/tmp/live") as inventory:
         inventory.add("milk", 2)
         inventory.remove("sugar", 0.25)
 
     with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, \
             open("tests/persistance/live.json5", 'r', encoding="utf-8") as f2:
+        assert json5.load(f1) == json5.load(f2)
+
+def test__live_edit_twice_will_accumulate():
+    """A live edit with statement will safe the inventory on exit."""
+    shutil.copyfile("tests/persistance/valid.json5", "tests/tmp/live.json5")
+
+    live_manager = LiveInventoryManager("tests/tmp/live")
+
+    with live_manager as inventory:
+        inventory.add("milk", 2)
+        inventory.remove("sugar", 0.25)
+
+    with live_manager as inventory:
+        inventory.add("milk", 3)
+        inventory.add("cheese")
+
+    with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, \
+            open("tests/persistance/accumulated.json5", 'r', encoding="utf-8") as f2:
         assert json5.load(f1) == json5.load(f2)
