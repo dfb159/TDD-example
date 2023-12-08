@@ -2,19 +2,19 @@
 import shutil
 import json5
 from pytest import approx, raises
-from inventory_app.inventory_manager import InventoryManager, LiveInventoryManager, InvalidFileFormat
+from inventory_app.Inventory import Inventory, LiveInventory, InvalidFileFormat
 
 
-def test__init_empty_manager():
-    """A newly instanciated manager should be empty."""
-    inventory = InventoryManager()
+def test__init_empty_inventory():
+    """A newly instanciated inventory should be empty."""
+    inventory = Inventory()
     assert len(inventory) == 0
     assert "milk" not in inventory
 
 
 def test__add_items():
-    """Adding items to the manager should be persisted."""
-    inventory = InventoryManager()
+    """Adding items to the inventory should be persisted."""
+    inventory = Inventory()
     inventory.add("milk")
     assert "milk" in inventory
     assert "sugar" not in inventory
@@ -28,8 +28,8 @@ def test__add_items():
 
 
 def test__add_zero():
-    """Adding zero items to the manager should not do anything."""
-    inventory = InventoryManager()
+    """Adding zero items to the inventory should not add an item."""
+    inventory = Inventory()
     inventory.add("milk", 0)
     assert "milk" not in inventory
     assert len(inventory) == 0
@@ -37,8 +37,8 @@ def test__add_zero():
 
 
 def test__add_negative():
-    """Adding negative items to the manager should behave like remove."""
-    inventory = InventoryManager()
+    """Adding negative items to the inventory should behave like remove."""
+    inventory = Inventory()
     inventory.add("milk", 2)
     assert "milk" in inventory
     inventory.add("milk", -1)
@@ -51,7 +51,7 @@ def test__add_negative():
 
 def test__set_zero():
     """Set items to zero will do nothing."""
-    inventory = InventoryManager()
+    inventory = Inventory()
     inventory["milk"] = 0
     assert "milk" not in inventory
     assert len(inventory) == 0
@@ -59,8 +59,8 @@ def test__set_zero():
 
 
 def test__add_and_set_zero():
-    """Set items to zero after zero will remove the item."""
-    inventory = InventoryManager()
+    """Set items to zero after adding will remove the item."""
+    inventory = Inventory()
     inventory["milk"] = 2
     assert "milk" in inventory
     inventory["milk"] = 0
@@ -68,8 +68,8 @@ def test__add_and_set_zero():
 
 
 def test__set_negative():
-    """Adding items to the manager should be persisted."""
-    inventory = InventoryManager()
+    """Setting item to a negative should set them to zero."""
+    inventory = Inventory()
     inventory["milk"] = 0
     assert "milk" not in inventory
     assert len(inventory) == 0
@@ -77,8 +77,8 @@ def test__set_negative():
 
 
 def test__add_items_twice():
-    """Adding the same item twice should still be added, but not throw an exception."""
-    inventory = InventoryManager()
+    """Adding the same item twice should accumulate them."""
+    inventory = Inventory()
     inventory.add("milk")
     inventory.add("milk")
     assert "milk" in inventory
@@ -88,7 +88,7 @@ def test__add_items_twice():
 
 def test__add_item_quantity():
     """Add specific quantity will update items."""
-    inventory = InventoryManager()
+    inventory = Inventory()
     inventory.add("milk", 3.3)
     assert "milk" in inventory
     assert len(inventory) == 1
@@ -96,8 +96,8 @@ def test__add_item_quantity():
 
 
 def test__set_item_quantity():
-    """Set specific quantity will update items."""
-    inventory = InventoryManager()
+    """Set specific quantity will replace item quantity."""
+    inventory = Inventory()
     inventory["milk"] = 2.4
     assert "milk" in inventory
     assert len(inventory) == 1
@@ -106,7 +106,7 @@ def test__set_item_quantity():
 
 def test__remove_item():
     """Removing an item will delete it from the list."""
-    inventory = InventoryManager()
+    inventory = Inventory()
     inventory.add("milk")
     assert len(inventory) == 1
     inventory.remove("milk")
@@ -116,7 +116,7 @@ def test__remove_item():
 
 def test__remove_item_then_add():
     """Adding a removed item should not throw."""
-    inventory = InventoryManager()
+    inventory = Inventory()
     inventory.add("milk")
     assert len(inventory) == 1
     assert "milk" in inventory
@@ -133,7 +133,7 @@ def test__remove_item_then_add():
 
 def test__remove_item_twice():
     """Removing an item twice does not throw."""
-    inventory = InventoryManager()
+    inventory = Inventory()
     inventory.add("milk")
     assert len(inventory) == 1
     assert "milk" in inventory
@@ -146,7 +146,7 @@ def test__remove_item_twice():
 
 def test__remove_item_quantity():
     """Removing an item with specific quantity."""
-    inventory = InventoryManager()
+    inventory = Inventory()
     inventory.add("milk", 4.2)
     assert "milk" in inventory
     assert len(inventory) == 1
@@ -158,7 +158,7 @@ def test__remove_item_quantity():
 
 def test__remove_negative_item_quantity():
     """Removing negative amouns of items should act like adding."""
-    inventory = InventoryManager()
+    inventory = Inventory()
     inventory.remove("milk", -4.2)
     assert "milk" in inventory
     assert len(inventory) == 1
@@ -171,7 +171,7 @@ def test__remove_negative_item_quantity():
 
 def test__remove_all_item_quantity():
     """Removing all items with huge quantity."""
-    inventory = InventoryManager()
+    inventory = Inventory()
     inventory.add("milk", 4.2)
     assert "milk" in inventory
     assert len(inventory) == 1
@@ -183,7 +183,7 @@ def test__remove_all_item_quantity():
 
 def test__remove_item_all():
     """Removing complete item."""
-    inventory = InventoryManager()
+    inventory = Inventory()
     inventory.add("milk", 4.2)
     assert "milk" in inventory
     assert len(inventory) == 1
@@ -193,15 +193,25 @@ def test__remove_item_all():
     assert inventory["milk"] == 0
 
 
+def test__remove_item_del():
+    """Removing an item with del dunder should remove all."""
+    inventory = Inventory()
+    inventory.add("milk")
+    assert len(inventory) == 1
+    del inventory["milk"]
+    assert len(inventory) == 0
+    assert "milk" not in inventory
+
+
 def test__unknown_item():
     """If the item does not exist, then the amount is zero."""
-    inventory = InventoryManager()
+    inventory = Inventory()
     assert inventory["milk"] == 0
 
 
 def test__load_from_disk():
     """Loads an existing file in the correct format."""
-    inventory = InventoryManager("tests/persistance/valid")
+    inventory = Inventory("tests/persistance/valid")
     assert inventory.items() == set(["milk", "sugar", "cheese"])
     assert inventory["milk"] == 3
     assert inventory["sugar"] == approx(1.4)
@@ -210,12 +220,12 @@ def test__load_from_disk():
 
 def test__load_wrong_from_disk():
     """Loads an existing file in an invalid format."""
-    raises(InvalidFileFormat, lambda: InventoryManager("tests/persistance/invalid"))
+    raises(InvalidFileFormat, lambda: Inventory("tests/persistance/invalid"))
 
 
 def test__save_to_disk():
-    """Saves a manager to the disk."""
-    inventory = InventoryManager()
+    """Saves an inventory to the disk."""
+    inventory = Inventory()
     inventory.add("milk", 3)
     inventory.add("sugar", 1.4)
     inventory.add("cheese", 1)
@@ -227,13 +237,13 @@ def test__save_to_disk():
 
 
 def test__disk_roundtrip():
-    """Saves and loads a manager. Check if same."""
-    inventory = InventoryManager()
+    """Saves and loads an inventory. Check if same."""
+    inventory = Inventory()
     inventory.add("milk", 3)
     inventory.add("sugar", 1.4)
     inventory.save("tests/tmp/roundtrip")
 
-    loaded_inventory = InventoryManager("tests/tmp/roundtrip")
+    loaded_inventory = Inventory("tests/tmp/roundtrip")
     assert inventory == loaded_inventory
 
 
@@ -241,7 +251,7 @@ def test__live_edit_will_persist():
     """A live edit with statement will safe the inventory on exit."""
     shutil.copyfile("tests/persistance/valid.json5", "tests/tmp/live.json5")
 
-    with LiveInventoryManager("tests/tmp/live") as inventory:
+    with LiveInventory("tests/tmp/live") as inventory:
         inventory.add("milk", 2)
         inventory.remove("sugar", 0.25)
 
@@ -254,13 +264,13 @@ def test__live_edit_twice_will_accumulate():
     """A live edit with statement will safe the inventory on exit."""
     shutil.copyfile("tests/persistance/valid.json5", "tests/tmp/live.json5")
 
-    live_manager = LiveInventoryManager("tests/tmp/live")
+    live_inventory = LiveInventory("tests/tmp/live")
 
-    with live_manager as inventory:
+    with live_inventory as inventory:
         inventory.add("milk", 2)
         inventory.remove("sugar", 0.25)
 
-    with live_manager as inventory:
+    with live_inventory as inventory:
         inventory.add("milk", 3)
         inventory.add("cheese")
 

@@ -1,7 +1,6 @@
-"""Main Inventory Manager API."""
+"""Main Inventory API."""
 
 
-from ast import In
 from io import TextIOWrapper
 from numbers import Number
 import os
@@ -41,8 +40,8 @@ def _check_inner_dict(data: dict) -> dict[str, float]:
     return data
 
 
-class InventoryManager():
-    """The Inventory Manager will persist items in its lifetime."""
+class Inventory():
+    """The Inventory will persist items in its lifetime."""
 
     inventory: dict[str, float]
     path: str | None
@@ -65,6 +64,9 @@ class InventoryManager():
             self.remove(item)
         else:
             self.inventory[item] = quantity
+
+    def __delitem__(self, item: str):
+        del self.inventory[item]
 
     def __contains__(self, item: str):
         return item in self.inventory
@@ -108,7 +110,7 @@ class InventoryManager():
         return set(self.inventory.keys())
 
     def save(self, path: str):
-        """Save the content of this manager into a file."""
+        """Save the content of this inventory into a file."""
 
         fullpath = _fullpath(path)
         os.makedirs(os.path.dirname(fullpath), exist_ok=True)
@@ -116,18 +118,18 @@ class InventoryManager():
             json5.dump(self.inventory, file)
 
 
-class LiveInventoryManager:
+class LiveInventory:
     """A live representation of a file.
-    If opened, the file content is availiable as an InventoryManager."""
+    If opened, the file content is availiable as an Inventory."""
 
     path: str
-    manager: InventoryManager
+    manager: Inventory
 
     def __init__(self, path: str):
         self.path = path
 
-    def __enter__(self) -> InventoryManager:
-        self.manager = InventoryManager(self.path)
+    def __enter__(self) -> Inventory:
+        self.manager = Inventory(self.path)
         return self.manager
 
     def __exit__(self, exc_type: Optional[Type[BaseException]],
