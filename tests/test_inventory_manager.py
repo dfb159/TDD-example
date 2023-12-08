@@ -241,7 +241,7 @@ def test__live_edit_will_persist():
     """A live edit with statement will safe the inventory on exit."""
     shutil.copyfile("tests/persistance/valid.json5", "tests/tmp/live.json5")
 
-    with InventoryManager.live("tests/tmp/live") as inventory:
+    with InventoryManager("tests/tmp/live") as inventory:
         inventory.add("milk", 2)
         inventory.remove("sugar", 0.3)
 
