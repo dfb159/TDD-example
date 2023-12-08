@@ -1,6 +1,7 @@
 """Main Inventory Manager API."""
 
 
+from ast import In
 from io import TextIOWrapper
 from numbers import Number
 import os
@@ -42,6 +43,7 @@ def _check_inner_dict(data: dict) -> dict[str, float]:
 
 class InventoryManager():
     """The Inventory Manager will persist items in its lifetime."""
+
     inventory: dict[str, float]
     path: str | None
 
@@ -70,21 +72,9 @@ class InventoryManager():
     def __eq__(self, other: Self):
         return self.inventory == other.inventory
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type: Optional[Type[BaseException]],
-                 exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> bool:
-        if exc_value is not None:
-            return False
-
-        if self.path is not None:
-            self.save(self.path)
-
-        return True
-
     def add(self, item: str, quantity: float = 1):
         """Adds an item to the inventory."""
+
         if quantity == 0:
             return
 
@@ -97,6 +87,7 @@ class InventoryManager():
 
     def remove(self, item: str, quantity: Optional[float] = None):
         """Removes the given item from the inventory."""
+
         if quantity is not None:
             if quantity < 0:  # nested if: Pylint does not get it otherwise
                 self.add(item, -quantity)
@@ -113,11 +104,37 @@ class InventoryManager():
 
     def items(self):
         """List of all items of this inventory."""
+
         return set(self.inventory.keys())
 
     def save(self, path: str):
         """Save the content of this manager into a file."""
+
         fullpath = _fullpath(path)
         os.makedirs(os.path.dirname(fullpath), exist_ok=True)
         with open(fullpath, 'w', encoding="utf-8") as file:
             json5.dump(self.inventory, file)
+
+
+class LiveInventoryManager:
+    """A live representation of a file.
+    If opened, the file content is availiable as an InventoryManager."""
+
+    path: str
+    manager: InventoryManager
+
+    def __init__(self, path: str):
+        self.path = path
+
+    def __enter__(self) -> InventoryManager:
+        self.manager = InventoryManager(self.path)
+        return self.manager
+
+    def __exit__(self, exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> bool:
+        if exc_value is not None:
+            return False
+
+        self.manager.save(self.path)
+
+        return True

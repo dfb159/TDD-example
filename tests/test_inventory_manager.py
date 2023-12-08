@@ -2,7 +2,7 @@
 import shutil
 import json5
 from pytest import approx, raises
-from inventory_app.inventory_manager import InventoryManager, InvalidFileFormat
+from inventory_app.inventory_manager import InventoryManager, LiveInventoryManager, InvalidFileFormat
 
 
 def test__init_empty_manager():
@@ -248,6 +248,7 @@ def test__live_edit_will_persist():
     with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, \
             open("tests/persistance/live.json5", 'r', encoding="utf-8") as f2:
         assert json5.load(f1) == json5.load(f2)
+
 
 def test__live_edit_twice_will_accumulate():
     """A live edit with statement will safe the inventory on exit."""
