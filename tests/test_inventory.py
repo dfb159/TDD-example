@@ -2,7 +2,7 @@
 import shutil
 import json5
 from pytest import approx, raises
-from inventory_app.Inventory import Inventory, LiveInventory, InvalidFileFormat
+from inventory_app.inventory import Inventory, LiveInventory, InvalidFileFormat
 
 
 def test__init_empty_inventory():
