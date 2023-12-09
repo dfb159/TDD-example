@@ -138,5 +138,4 @@ class LiveInventory:
             return False
 
         self.manager.save(self.path)
-
         return True
