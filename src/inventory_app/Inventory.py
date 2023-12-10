@@ -21,33 +21,6 @@ class InvalidFileFormat(Exception):
     """An error occoured during opening a file as an inventory."""
 
 
-def _fullpath(path: str):
-    if not path.endswith((".json", ".json5")):
-        path += ".json5"
-    return path
-
-
-def _load_inventory(file: TextIOWrapper) -> dict[str, float]:
-    try:
-        data = json5.load(file)
-    except Exception as e:
-        raise InvalidFileFormat() from e
-
-    if not isinstance(data, dict):
-        raise InvalidFileFormat("Content is not of type dict")
-
-    return _check_inner_dict(data)
-
-
-def _check_inner_dict(data: dict) -> dict[str, float]:
-    for key, value in data.items():
-        if not isinstance(key, str):
-            raise InvalidFileFormat(f"Content key '{key}' is not of type str")
-        if not isinstance(value, Number):
-            raise InvalidFileFormat(f"Content key '{value}' is not a number")
-    return data
-
-
 class Inventory:
     """
     Represents an inventory of items.
@@ -72,18 +45,14 @@ class Inventory:
     path: str | None
     """The path to the inventory file, if it exists."""
 
-    def __init__(self, path: Optional[str] = None):
+    def __init__(self, **items: float):
         """
         Initialize the Inventory object.
 
         Arguments:
-            path (Optional[str]): The path to the inventory file. If provided, the inventory will be loaded from the file.
+            **items (float): The items to initialize the inventory with.
         """
-        self.inventory = {}
-        self.path = path
-        if self.path:
-            with open(_fullpath(self.path), 'r', encoding="utf-8") as file:
-                self.inventory = _load_inventory(file)
+        self.inventory = items
 
     def __len__(self):
         return len(self.inventory)
@@ -152,16 +121,69 @@ class Inventory:
         """Return an iterator over the keys in the inventory."""
         return self.inventory.keys()
 
-    def save(self, path: str):
+
+class InventoryLoader:
+    """
+    A class for loading an inventory from a file.
+
+    This class provides a method for loading an inventory from a file and returning
+    an `Inventory` object.
+    """
+
+    def __init__(self):
+        """Initialize the InventoryLoader."""
+
+    def load_inventory(self, path: str) -> Inventory:
+        """
+        Load the inventory from the file and return an Inventory object.
+
+        Arguments:
+            path (str): The path to the inventory file.
+
+        Returns:
+            Inventory: The loaded inventory.
+        """
+        with open(InventoryLoader._fullpath(path), 'r', encoding="utf-8") as file:
+            inventory = InventoryLoader._load_inventory(file)
+            return Inventory(**inventory)
+
+    def save_inventory(self, path: str):
         """Save the inventory to a file.
 
         Arguments:
             path (str): The path to save the inventory to.
         """
-        fullpath = _fullpath(path)
+        fullpath = InventoryLoader._fullpath(path)
         os.makedirs(os.path.dirname(fullpath), exist_ok=True)
         with open(fullpath, 'w', encoding="utf-8") as file:
             json5.dump(self.inventory, file)
+
+    @staticmethod
+    def _fullpath(path: str):
+        if not path.endswith((".json", ".json5")):
+            path += ".json5"
+        return path
+
+    @staticmethod
+    def _load_inventory(file: TextIOWrapper) -> dict[str, float]:
+        try:
+            data = json5.load(file)
+        except Exception as e:
+            raise InvalidFileFormat() from e
+
+        if not isinstance(data, dict):
+            raise InvalidFileFormat("Content is not of type dict")
+
+        return InventoryLoader._check_inner_dict(data)
+
+    @staticmethod
+    def _check_inner_dict(data: dict[str, float]) -> dict[str, float]:
+        for key, value in data.items():
+            if not isinstance(key, str):
+                raise InvalidFileFormat(f"Content key '{key}' is not of type str")
+            if not isinstance(value, Number):
+                raise InvalidFileFormat(f"Content key '{value}' is not a number")
+        return data
 
 
 class LiveInventory:
@@ -176,22 +198,26 @@ class LiveInventory:
     Attributes:
         path (str): The path to the inventory file.
         manager (Inventory): The inventory manager.
-
-    Methods:
-        __init__(self, path: str): Initializes the LiveInventory object with the given path.
-        __enter__(self) -> Inventory: Enters the context and returns the inventory manager.
-        __exit__(self, exc_type, exc_value, traceback) -> bool: Exits the context and saves the inventory.
     """
 
-    path: str
-    manager: Inventory
+    __path: str
+    """The path to the inventory file."""
+
+    __inventory: Inventory
+    """The inventory of this context manager."""
 
     def __init__(self, path: str):
-        self.path = path
+        """
+        Initialize an instance of the LiveInventory class.
+
+        Arguments:
+            path (str): The path to the inventory file.
+        """
+        self.__path = path
 
     def __enter__(self) -> Inventory:
-        self.manager = Inventory(self.path)
-        return self.manager
+        self.__inventory = Inventory(self.__path)
+        return self.__inventory
 
     def __exit__(
         self,
@@ -202,5 +228,5 @@ class LiveInventory:
         if exc_value is not None:
             return False
 
-        self.manager.save(self.path)
+        self.__inventory.save(self.__path)
         return True
