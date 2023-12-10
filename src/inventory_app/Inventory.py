@@ -130,33 +130,41 @@ class InventoryLoader:
     an `Inventory` object.
     """
 
-    def __init__(self):
-        """Initialize the InventoryLoader."""
+    __path: str
+    """The path to the inventory file."""
 
-    def load_inventory(self, path: str) -> Inventory:
+    def __init__(self, path: str):
         """
-        Load the inventory from the file and return an Inventory object.
+        Initialize the InventoryLoader.
 
         Arguments:
             path (str): The path to the inventory file.
+        """
+        self.__path = InventoryLoader._fullpath(path)
+
+    def load_inventory(self) -> Inventory:
+        """
+        Load the inventory from the file and return an Inventory object.
 
         Returns:
             Inventory: The loaded inventory.
         """
-        with open(InventoryLoader._fullpath(path), 'r', encoding="utf-8") as file:
-            inventory = InventoryLoader._load_inventory(file)
-            return Inventory(**inventory)
+        try:
+            with open(self.__path, 'r', encoding="utf-8") as file:
+                inventory = InventoryLoader._load_inventory(file)
+                return Inventory(**inventory)
+        except FileNotFoundError:
+            return Inventory()
 
-    def save_inventory(self, path: str):
+    def save_inventory(self, inventory: Inventory):
         """Save the inventory to a file.
 
         Arguments:
-            path (str): The path to save the inventory to.
+            inventory (Inventory): The inventory to save.
         """
-        fullpath = InventoryLoader._fullpath(path)
-        os.makedirs(os.path.dirname(fullpath), exist_ok=True)
-        with open(fullpath, 'w', encoding="utf-8") as file:
-            json5.dump(self.inventory, file)
+        os.makedirs(os.path.dirname(self.__path), exist_ok=True)
+        with open(self.__path, 'w', encoding="utf-8") as file:
+            json5.dump(inventory, file)
 
     @staticmethod
     def _fullpath(path: str):
@@ -200,23 +208,23 @@ class LiveInventory:
         manager (Inventory): The inventory manager.
     """
 
-    __path: str
-    """The path to the inventory file."""
+    __loader: InventoryLoader
+    """The inventory loader to use."""
 
     __inventory: Inventory
     """The inventory of this context manager."""
 
-    def __init__(self, path: str):
+    def __init__(self, loader: InventoryLoader):
         """
         Initialize an instance of the LiveInventory class.
 
         Arguments:
-            path (str): The path to the inventory file.
+            loader (InventoryLoader): The inventory loader to use.
         """
-        self.__path = path
+        self.__loader = loader
 
     def __enter__(self) -> Inventory:
-        self.__inventory = Inventory(self.__path)
+        self.__inventory = self.__loader.load_inventory()
         return self.__inventory
 
     def __exit__(

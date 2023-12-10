@@ -15,7 +15,19 @@ class CookingException(Exception):
 class CookingService:
     """A service for checking and cooking recipes based on available inventory."""
 
-    def is_cookable(self, recipe: Recipe, inventory: Inventory):
+    inventory: Inventory
+    """The inventory to use for cooking."""
+
+    def __init__(self, inventory: Inventory):
+        """
+        Initialize a CookingService object.
+
+        Arguments:
+            inventory (Inventory): The inventory to use for cooking.
+        """
+        self.inventory = inventory
+
+    def is_cookable(self, recipe: Recipe):
         """
         Check if the given recipe can be prepared.
 
@@ -30,11 +42,11 @@ class CookingService:
             bool: True if the recipe can be prepared, False otherwise.
         """
         for ingredient, quantity in recipe.ingredients.items():
-            if ingredient not in inventory or inventory[ingredient] < quantity:
+            if ingredient not in self.inventory or self.inventory[ingredient] < quantity:
                 return False
         return True
 
-    def cook_recipe(self, recipe: Recipe, inventory: Inventory):
+    def cook_recipe(self, recipe: Recipe):
         """
         Cook a recipe using the provided inventory.
 
@@ -43,13 +55,12 @@ class CookingService:
 
         Arguments:
             recipe (Recipe): The recipe to be cooked.
-            inventory (Inventory): The inventory containing the ingredients.
 
         Raises:
             CookingException: If there are not enough ingredients to cook the recipe.
         """
-        if not self.is_cookable(recipe, inventory):
+        if not self.is_cookable(recipe, self.inventory):
             raise CookingException("Not enough ingredients to cook the recipe")
 
         for ingredient, quantity in recipe.ingredients.items():
-            inventory[ingredient] -= quantity
+            self.inventory[ingredient] -= quantity
