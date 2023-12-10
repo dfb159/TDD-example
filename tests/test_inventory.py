@@ -1,4 +1,4 @@
-"""Tests for the basic Inventory API."""
+"""Unit tests for the Inventory class."""
 import shutil
 import json5
 from pytest import approx, raises
@@ -231,8 +231,7 @@ def test__save_to_disk():
     inventory.add("cheese", 1)
     inventory.save("tests/tmp/save")
 
-    with open("tests/tmp/save.json5", 'r', encoding="utf-8") as f1, \
-            open("tests/persistance/valid.json5", 'r', encoding="utf-8") as f2:
+    with open("tests/tmp/save.json5", 'r', encoding="utf-8") as f1, open("tests/persistance/valid.json5", 'r', encoding="utf-8") as f2:
         assert json5.load(f1) == json5.load(f2)
 
 
@@ -255,8 +254,7 @@ def test__live_edit_will_persist():
         inventory.add("milk", 2)
         inventory.remove("sugar", 0.25)
 
-    with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, \
-            open("tests/persistance/live.json5", 'r', encoding="utf-8") as f2:
+    with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, open("tests/persistance/live.json5", 'r', encoding="utf-8") as f2:
         assert json5.load(f1) == json5.load(f2)
 
 
@@ -274,6 +272,5 @@ def test__live_edit_twice_will_accumulate():
         inventory.add("milk", 3)
         inventory.add("cheese")
 
-    with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, \
-            open("tests/persistance/accumulated.json5", 'r', encoding="utf-8") as f2:
+    with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, open("tests/persistance/accumulated.json5", 'r', encoding="utf-8") as f2:
         assert json5.load(f1) == json5.load(f2)

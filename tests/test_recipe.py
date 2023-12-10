@@ -1,7 +1,5 @@
-"""Tests for the basic Inventory API."""
+"""Unit tests for the Recipe class."""
 
-from pytest import raises
-from inventory_app.inventory import Inventory
 from inventory_app.recipe import Recipe
 
 
@@ -25,4 +23,3 @@ def test__recipe_portions_scale():
     assert scaled["milk"] == 0.75
     assert scaled.time == 30
     assert scaled.portions == 3
-

@@ -1,4 +1,9 @@
-"""Recipe API"""
+"""
+Recipe API
+
+This module contains the implementation of the Recipe class, which represents a recipe with ingredients and information about cooking.
+"""
+
 
 from typing import Mapping
 
@@ -23,7 +28,17 @@ class _Ingredients(Mapping):
 
 
 class Recipe:
-    """A recipe with ingredients and information about cooking."""
+    """A recipe with ingredients and information about cooking.
+
+    Attributes:
+        ingredients (dict): A dictionary containing the ingredients and their quantities.
+        time (float): The cooking time for the recipe.
+        portions (float): The number of portions the recipe yields.
+
+    Methods:
+        for_portions(self, new_portions: float): Scales the recipe to match a given number of portions.
+    """
+
     ingredients: _Ingredients
     time: float
     portions: float
@@ -39,5 +54,5 @@ class Recipe:
     def for_portions(self, new_portions: float):
         """Scale this recipe to match the given number of portions."""
         factor = new_portions / self.portions
-        new_amounts = {n: x*factor for n, x in self.ingredients.items()}
+        new_amounts = {n: x * factor for n, x in self.ingredients.items()}
         return Recipe(portions=new_portions, time=self.time, **new_amounts)

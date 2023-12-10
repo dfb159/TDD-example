@@ -40,7 +40,7 @@ def _check_inner_dict(data: dict) -> dict[str, float]:
     return data
 
 
-class Inventory():
+class Inventory:
     """The Inventory will persist items in its lifetime."""
 
     inventory: dict[str, float]
@@ -132,8 +132,12 @@ class LiveInventory:
         self.manager = Inventory(self.path)
         return self.manager
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]],
-                 exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> bool:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ):
         if exc_value is not None:
             return False
 
