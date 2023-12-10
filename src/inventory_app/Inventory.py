@@ -1,5 +1,13 @@
-"""Main Inventory API."""
+"""
+Inventory API.
 
+This module provides classes for managing an inventory of items.
+
+Classes:
+    - InvalidFileFormat: An error that occurs when opening a file as an inventory.
+    - Inventory: The main inventory class that persists items.
+    - LiveInventory: A live representation of a file that can be opened as an inventory.
+"""
 
 from io import TextIOWrapper
 from numbers import Number
@@ -41,12 +49,36 @@ def _check_inner_dict(data: dict) -> dict[str, float]:
 
 
 class Inventory:
-    """The Inventory will persist items in its lifetime."""
+    """
+    Represents an inventory of items.
+
+    This class provides methods for managing an inventory of items, including adding, removing, and saving items.
+
+    Attributes:
+        inventory (dict[str, float]): The dictionary representing the inventory, where the keys are item names and the values are quantities.
+        path (str | None): The path to the inventory file, if it exists.
+
+    Methods:
+        add(self, item: str, quantity: float = 1): Adds a quantity of an item to the inventory.
+        remove(self, item: str, quantity: Optional[float] = None): Removes a quantity of an item from the inventory.
+        items(self): Returns an iterator over the items in the inventory.
+        keys(self): Returns an iterator over names of items in the inventory.
+        save(self, path: str): Saves the inventory to a file.
+    """
 
     inventory: dict[str, float]
-    path: str | None
+    """The dictionary representing the inventory, where the keys are item names and the values are quantities."""
 
-    def __init__(self, path: Optional[str] = None) -> None:
+    path: str | None
+    """The path to the inventory file, if it exists."""
+
+    def __init__(self, path: Optional[str] = None):
+        """
+        Initialize the Inventory object.
+
+        Arguments:
+            path (Optional[str]): The path to the inventory file. If provided, the inventory will be loaded from the file.
+        """
         self.inventory = {}
         self.path = path
         if self.path:
@@ -75,8 +107,12 @@ class Inventory:
         return self.inventory == other.inventory
 
     def add(self, item: str, quantity: float = 1):
-        """Adds an item to the inventory."""
+        """Add the given quantity of an item to the inventory.
 
+        Arguments:
+            item (str): The name of the item to add.
+            quantity (float, optional): The quantity of the item to add. Defaults to 1.
+        """
         if quantity == 0:
             return
 
@@ -88,16 +124,20 @@ class Inventory:
             self.inventory[item] += quantity
 
     def remove(self, item: str, quantity: Optional[float] = None):
-        """Removes the given item from the inventory."""
+        """Remove the given quantity of an item from the inventory.
 
+        If the quantity is not given or negative, the item is removed completely.
+
+        Arguments:
+            item (str): The name of the item to remove.
+            quantity (float, optional): The quantity of the item to remove. Defaults to None.
+        """
         if quantity is not None:
             if quantity < 0:  # nested if: Pylint does not get it otherwise
                 self.add(item, -quantity)
                 return
-
         if item not in self.inventory:
             return
-
         stored = self.inventory[item]
         if quantity is None or stored <= quantity:
             del self.inventory[item]
@@ -105,13 +145,19 @@ class Inventory:
             self.inventory[item] -= quantity
 
     def items(self):
-        """List of all items of this inventory."""
+        """Return an iterator over the items in the inventory."""
+        return self.inventory.items()
 
-        return set(self.inventory.keys())
+    def keys(self):
+        """Return an iterator over the keys in the inventory."""
+        return self.inventory.keys()
 
     def save(self, path: str):
-        """Save the content of this inventory into a file."""
+        """Save the inventory to a file.
 
+        Arguments:
+            path (str): The path to save the inventory to.
+        """
         fullpath = _fullpath(path)
         os.makedirs(os.path.dirname(fullpath), exist_ok=True)
         with open(fullpath, 'w', encoding="utf-8") as file:
@@ -119,8 +165,23 @@ class Inventory:
 
 
 class LiveInventory:
-    """A live representation of a file.
-    If opened, the file content is availiable as an Inventory."""
+    """
+    A context manager for managing live inventory.
+
+    This class provides a context manager interface for managing live inventory.
+    It initializes an `Inventory` object from the given path and returns it when
+    entering the context. It also saves the inventory when exiting the context,
+    unless an exception occurred.
+
+    Attributes:
+        path (str): The path to the inventory file.
+        manager (Inventory): The inventory manager.
+
+    Methods:
+        __init__(self, path: str): Initializes the LiveInventory object with the given path.
+        __enter__(self) -> Inventory: Enters the context and returns the inventory manager.
+        __exit__(self, exc_type, exc_value, traceback) -> bool: Exits the context and saves the inventory.
+    """
 
     path: str
     manager: Inventory

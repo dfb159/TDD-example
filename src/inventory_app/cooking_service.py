@@ -1,5 +1,5 @@
 """
-Cooking serive API
+Cooking service API.
 
 This module contains the CookingService class, which is a service for checking and cooking recipes based on available inventory.
 """
@@ -17,9 +17,12 @@ class CookingService:
 
     def is_cookable(self, recipe: Recipe, inventory: Inventory):
         """
-        Check if the given recipe can be prepared based on the available inventory.
+        Check if the given recipe can be prepared.
 
-        Args:
+        This method checks if the provided recipe can be prepared based on the available inventory.
+        It iterates through each ingredient in the recipe and checks if the quantity is sufficient.
+
+        Arguments:
             recipe (Recipe): The recipe to be checked.
             inventory (Inventory): The inventory of ingredients.
 
@@ -33,16 +36,18 @@ class CookingService:
 
     def cook_recipe(self, recipe: Recipe, inventory: Inventory):
         """
-        Cooks a recipe using the provided inventory.
+        Cook a recipe using the provided inventory.
 
-        Args:
+        This method checks if the given recipe can be cooked based on the available inventory.
+        If there are enough ingredients, it subtracts the required quantities from the inventory.
+
+        Arguments:
             recipe (Recipe): The recipe to be cooked.
             inventory (Inventory): The inventory containing the ingredients.
 
         Raises:
             CookingException: If there are not enough ingredients to cook the recipe.
         """
-
         if not self.is_cookable(recipe, inventory):
             raise CookingException("Not enough ingredients to cook the recipe")
 

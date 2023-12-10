@@ -1,5 +1,4 @@
 """Unit tests for the Recipe class."""
-
 from inventory_app.recipe import Recipe
 
 

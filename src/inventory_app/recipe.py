@@ -1,9 +1,8 @@
 """
-Recipe API
+Recipe API.
 
 This module contains the implementation of the Recipe class, which represents a recipe with ingredients and information about cooking.
 """
-
 
 from typing import Mapping
 
@@ -24,6 +23,7 @@ class _Ingredients(Mapping):
         return iter(self._data)
 
     def items(self):
+        """Return an iterator over the items in this recipe."""
         return self._data.items()
 
 
@@ -40,10 +40,26 @@ class Recipe:
     """
 
     ingredients: _Ingredients
+    """A dictionary containing the ingredients and their quantities."""
+
     time: float
+    """The cooking time for the recipe."""
+
     portions: float
+    """The number of portions the recipe yields."""
 
     def __init__(self, *, portions: float, time: float, **ingredients: float):
+        """
+        Initialize a Recipe object.
+
+        Arguments:
+            portions (float): The number of portions the recipe yields.
+            time (float): The time required to prepare the recipe.
+            **ingredients (float): The ingredients required for the recipe, along with their quantities.
+
+        Returns:
+            None
+        """
         self.portions = portions
         self.time = time
         self.ingredients = _Ingredients(ingredients)
@@ -52,7 +68,15 @@ class Recipe:
         return self.ingredients[key]
 
     def for_portions(self, new_portions: float):
-        """Scale this recipe to match the given number of portions."""
+        """
+        Create a new Recipe object with adjusted ingredient amounts for the specified number of portions.
+
+        Arguments:
+            new_portions (float): The desired number of portions for the new Recipe.
+
+        Returns:
+            Recipe: A new Recipe object with adjusted ingredient amounts for the specified number of portions.
+        """
         factor = new_portions / self.portions
         new_amounts = {n: x * factor for n, x in self.ingredients.items()}
         return Recipe(portions=new_portions, time=self.time, **new_amounts)

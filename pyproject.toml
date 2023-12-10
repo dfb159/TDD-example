@@ -30,7 +30,7 @@ skip-string-normalization = true
 [tool.flake8]
 max-line-length = 160
 max-complexity = 10
-ignore = "D107"
+ignore = "D105"
 
 [tool.coverage.run]
 omit = [".*", "*/site-packages/*"]

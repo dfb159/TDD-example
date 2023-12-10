@@ -1,5 +1,4 @@
 """Unit tests for the CookingService class."""
-
 from pytest import raises
 from inventory_app.inventory import Inventory
 from inventory_app.recipe import Recipe
