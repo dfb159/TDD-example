@@ -6,7 +6,9 @@ This module provides classes for managing an inventory of items.
 Classes:
     - InvalidFileFormat: An error that occurs when opening a file as an inventory.
     - Inventory: The main inventory class that persists items.
+    - InventorySerializer: A class for serializing and deserializing an inventory.
     - LiveInventory: A live representation of a file that can be opened as an inventory.
+    - InventoryLoader: A class for loading an inventory from a file.
 """
 
 from io import TextIOWrapper
@@ -21,33 +23,6 @@ class InvalidFileFormat(Exception):
     """An error occoured during opening a file as an inventory."""
 
 
-def _fullpath(path: str):
-    if not path.endswith((".json", ".json5")):
-        path += ".json5"
-    return path
-
-
-def _load_inventory(file: TextIOWrapper) -> dict[str, float]:
-    try:
-        data = json5.load(file)
-    except Exception as e:
-        raise InvalidFileFormat() from e
-
-    if not isinstance(data, dict):
-        raise InvalidFileFormat("Content is not of type dict")
-
-    return _check_inner_dict(data)
-
-
-def _check_inner_dict(data: dict) -> dict[str, float]:
-    for key, value in data.items():
-        if not isinstance(key, str):
-            raise InvalidFileFormat(f"Content key '{key}' is not of type str")
-        if not isinstance(value, Number):
-            raise InvalidFileFormat(f"Content key '{value}' is not a number")
-    return data
-
-
 class Inventory:
     """
     Represents an inventory of items.
@@ -56,7 +31,6 @@ class Inventory:
 
     Attributes:
         inventory (dict[str, float]): The dictionary representing the inventory, where the keys are item names and the values are quantities.
-        path (str | None): The path to the inventory file, if it exists.
 
     Methods:
         add(self, item: str, quantity: float = 1): Adds a quantity of an item to the inventory.
@@ -66,45 +40,43 @@ class Inventory:
         save(self, path: str): Saves the inventory to a file.
     """
 
-    inventory: dict[str, float]
+    __inventory: dict[str, float]
     """The dictionary representing the inventory, where the keys are item names and the values are quantities."""
 
-    path: str | None
-    """The path to the inventory file, if it exists."""
-
-    def __init__(self, path: Optional[str] = None):
+    def __init__(self, **items: float):
         """
         Initialize the Inventory object.
 
         Arguments:
-            path (Optional[str]): The path to the inventory file. If provided, the inventory will be loaded from the file.
+            **items (float): The items to initialize the inventory with.
         """
-        self.inventory = {}
-        self.path = path
-        if self.path:
-            with open(_fullpath(self.path), 'r', encoding="utf-8") as file:
-                self.inventory = _load_inventory(file)
+        self.__inventory = items
 
     def __len__(self):
-        return len(self.inventory)
+        return len(self.__inventory)
 
     def __getitem__(self, item: str):
-        return self.inventory[item] if item in self.inventory else 0
+        return self.__inventory[item] if item in self.__inventory else 0
 
     def __setitem__(self, item: str, quantity: float):
         if quantity <= 0:
             self.remove(item)
         else:
-            self.inventory[item] = quantity
+            self.__inventory[item] = quantity
 
     def __delitem__(self, item: str):
-        del self.inventory[item]
+        self.remove(item)
 
     def __contains__(self, item: str):
-        return item in self.inventory
+        return item in self.__inventory
 
-    def __eq__(self, other: Self):
-        return self.inventory == other.inventory
+    def __eq__(self, other: Self | dict[str, float]):
+        if isinstance(other, dict):
+            return self.__inventory == other
+        elif isinstance(other, Inventory):
+            return self.__inventory == other.__inventory
+        else:
+            return NotImplemented
 
     def add(self, item: str, quantity: float = 1):
         """Add the given quantity of an item to the inventory.
@@ -118,10 +90,10 @@ class Inventory:
 
         if quantity < 0:
             self.remove(item, -quantity)
-        elif item not in self.inventory:
-            self.inventory[item] = quantity
+        elif item not in self.__inventory:
+            self.__inventory[item] = quantity
         else:
-            self.inventory[item] += quantity
+            self.__inventory[item] += quantity
 
     def remove(self, item: str, quantity: Optional[float] = None):
         """Remove the given quantity of an item from the inventory.
@@ -136,32 +108,104 @@ class Inventory:
             if quantity < 0:  # nested if: Pylint does not get it otherwise
                 self.add(item, -quantity)
                 return
-        if item not in self.inventory:
+        if item not in self.__inventory:
             return
-        stored = self.inventory[item]
+        stored = self.__inventory[item]
         if quantity is None or stored <= quantity:
-            del self.inventory[item]
+            del self.__inventory[item]
         else:
-            self.inventory[item] -= quantity
+            self.__inventory[item] -= quantity
 
     def items(self):
         """Return an iterator over the items in the inventory."""
-        return self.inventory.items()
+        return self.__inventory.items()
 
-    def keys(self):
-        """Return an iterator over the keys in the inventory."""
-        return self.inventory.keys()
+    def names(self):
+        """Return an iterator over the item names in the inventory."""
+        return self.__inventory.keys()
 
-    def save(self, path: str):
+
+class InventorySerializer:
+    """A class for serializing and deserializing an inventory."""
+
+    def serialize(self, inventory: Inventory) -> dict[str, float]:
+        """Serialize an inventory to a dictionary."""
+        return inventory._Inventory__inventory
+
+    def deserialize(self, file: TextIOWrapper) -> dict[str, float]:
+        """Deserialize an inventory from a file."""
+        try:
+            return json5.load(file)
+        except Exception as e:
+            raise InvalidFileFormat(f"File '{file.path}' could not be loaded as json5") from e
+
+
+class InventoryLoader:
+    """
+    A class for loading an inventory from a file.
+
+    This class provides a method for loading an inventory from a file and returning
+    an `Inventory` object.
+    """
+
+    __path: str
+    """The path to the inventory file."""
+
+    __serializer: InventorySerializer
+    """The serializer to use."""
+
+    def __init__(self, path: str, serializer: InventorySerializer):
+        """
+        Initialize the InventoryLoader.
+
+        Arguments:
+            path (str): The path to the inventory file.
+        """
+        self.__path = InventoryLoader._fullpath(path)
+        self.__serializer = serializer
+
+    def load_inventory(self) -> Inventory:
+        """
+        Load the inventory from the file and return an Inventory object.
+
+        Returns:
+            Inventory: The loaded inventory.
+        """
+        try:
+            with open(self.__path, 'r', encoding="utf-8") as file:
+                inventory = self.__serializer.deserialize(file)
+                InventoryLoader._check_inner_dict(inventory)
+                return Inventory(**inventory)
+        except FileNotFoundError:
+            return Inventory()
+
+    def save_inventory(self, inventory: Inventory):
         """Save the inventory to a file.
 
         Arguments:
-            path (str): The path to save the inventory to.
+            inventory (Inventory): The inventory to save.
         """
-        fullpath = _fullpath(path)
-        os.makedirs(os.path.dirname(fullpath), exist_ok=True)
-        with open(fullpath, 'w', encoding="utf-8") as file:
-            json5.dump(self.inventory, file)
+        os.makedirs(os.path.dirname(self.__path), exist_ok=True)
+        with open(self.__path, 'w', encoding="utf-8") as file:
+            content = self.__serializer.serialize(inventory)
+            json5.dump(content, file)
+
+    @staticmethod
+    def _fullpath(path: str):
+        if not path.endswith((".json", ".json5")):
+            path += ".json5"
+        return path
+
+    @staticmethod
+    def _check_inner_dict(data: dict[str, float]) -> dict[str, float]:
+        if not isinstance(data, dict):
+            raise InvalidFileFormat("Content is not of type dict")
+
+        for key, value in data.items():
+            if not isinstance(key, str):
+                raise InvalidFileFormat(f"Content key '{key}' is not of type str")
+            if not isinstance(value, Number):
+                raise InvalidFileFormat(f"Content value '{value}' for key '{key}' is not a number")
 
 
 class LiveInventory:
@@ -176,22 +220,26 @@ class LiveInventory:
     Attributes:
         path (str): The path to the inventory file.
         manager (Inventory): The inventory manager.
-
-    Methods:
-        __init__(self, path: str): Initializes the LiveInventory object with the given path.
-        __enter__(self) -> Inventory: Enters the context and returns the inventory manager.
-        __exit__(self, exc_type, exc_value, traceback) -> bool: Exits the context and saves the inventory.
     """
 
-    path: str
-    manager: Inventory
+    __loader: InventoryLoader
+    """The inventory loader to use."""
 
-    def __init__(self, path: str):
-        self.path = path
+    __inventory: Inventory
+    """The inventory of this context manager."""
+
+    def __init__(self, loader: InventoryLoader):
+        """
+        Initialize an instance of the LiveInventory class.
+
+        Arguments:
+            loader (InventoryLoader): The inventory loader to use.
+        """
+        self.__loader = loader
 
     def __enter__(self) -> Inventory:
-        self.manager = Inventory(self.path)
-        return self.manager
+        self.__inventory = self.__loader.load_inventory()
+        return self.__inventory
 
     def __exit__(
         self,
@@ -202,5 +250,5 @@ class LiveInventory:
         if exc_value is not None:
             return False
 
-        self.manager.save(self.path)
+        self.__loader.save_inventory(self.__inventory)
         return True
