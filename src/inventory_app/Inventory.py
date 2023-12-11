@@ -29,7 +29,6 @@ class Inventory:
 
     Attributes:
         inventory (dict[str, float]): The dictionary representing the inventory, where the keys are item names and the values are quantities.
-        path (str | None): The path to the inventory file, if it exists.
 
     Methods:
         add(self, item: str, quantity: float = 1): Adds a quantity of an item to the inventory.
@@ -39,11 +38,8 @@ class Inventory:
         save(self, path: str): Saves the inventory to a file.
     """
 
-    inventory: dict[str, float]
+    __inventory: dict[str, float]
     """The dictionary representing the inventory, where the keys are item names and the values are quantities."""
-
-    path: str | None
-    """The path to the inventory file, if it exists."""
 
     def __init__(self, **items: float):
         """
@@ -52,31 +48,31 @@ class Inventory:
         Arguments:
             **items (float): The items to initialize the inventory with.
         """
-        self.inventory = items
+        self.__inventory = items
 
     def __len__(self):
-        return len(self.inventory)
+        return len(self.__inventory)
 
     def __getitem__(self, item: str):
-        return self.inventory[item] if item in self.inventory else 0
+        return self.__inventory[item] if item in self.__inventory else 0
 
     def __setitem__(self, item: str, quantity: float):
         if quantity <= 0:
             self.remove(item)
         else:
-            self.inventory[item] = quantity
+            self.__inventory[item] = quantity
 
     def __delitem__(self, item: str):
-        del self.inventory[item]
+        self.remove(item)
 
     def __contains__(self, item: str):
-        return item in self.inventory
+        return item in self.__inventory
 
     def __eq__(self, other: Self | dict[str, float]):
         if isinstance(other, dict):
-            return self.inventory == other
+            return self.__inventory == other
         elif isinstance(other, Inventory):
-            return self.inventory == other.inventory
+            return self.__inventory == other.__inventory
         else:
             return NotImplemented
 
@@ -92,10 +88,10 @@ class Inventory:
 
         if quantity < 0:
             self.remove(item, -quantity)
-        elif item not in self.inventory:
-            self.inventory[item] = quantity
+        elif item not in self.__inventory:
+            self.__inventory[item] = quantity
         else:
-            self.inventory[item] += quantity
+            self.__inventory[item] += quantity
 
     def remove(self, item: str, quantity: Optional[float] = None):
         """Remove the given quantity of an item from the inventory.
@@ -110,21 +106,21 @@ class Inventory:
             if quantity < 0:  # nested if: Pylint does not get it otherwise
                 self.add(item, -quantity)
                 return
-        if item not in self.inventory:
+        if item not in self.__inventory:
             return
-        stored = self.inventory[item]
+        stored = self.__inventory[item]
         if quantity is None or stored <= quantity:
-            del self.inventory[item]
+            del self.__inventory[item]
         else:
-            self.inventory[item] -= quantity
+            self.__inventory[item] -= quantity
 
     def items(self):
         """Return an iterator over the items in the inventory."""
-        return self.inventory.items()
+        return self.__inventory.items()
 
-    def keys(self):
-        """Return an iterator over the keys in the inventory."""
-        return self.inventory.keys()
+    def names(self):
+        """Return an iterator over the item names in the inventory."""
+        return self.__inventory.keys()
 
 
 class InventoryLoader:
