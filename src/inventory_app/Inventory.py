@@ -6,7 +6,9 @@ This module provides classes for managing an inventory of items.
 Classes:
     - InvalidFileFormat: An error that occurs when opening a file as an inventory.
     - Inventory: The main inventory class that persists items.
+    - InventorySerializer: A class for serializing and deserializing an inventory.
     - LiveInventory: A live representation of a file that can be opened as an inventory.
+    - InventoryLoader: A class for loading an inventory from a file.
 """
 
 from io import TextIOWrapper
@@ -123,6 +125,21 @@ class Inventory:
         return self.__inventory.keys()
 
 
+class InventorySerializer:
+    """A class for serializing and deserializing an inventory."""
+
+    def serialize(self, inventory: Inventory) -> dict[str, float]:
+        """Serialize an inventory to a dictionary."""
+        return inventory._Inventory__inventory
+
+    def deserialize(self, file: TextIOWrapper) -> dict[str, float]:
+        """Deserialize an inventory from a file."""
+        try:
+            return json5.load(file)
+        except Exception as e:
+            raise InvalidFileFormat(f"File '{file.path}' could not be loaded as json5") from e
+
+
 class InventoryLoader:
     """
     A class for loading an inventory from a file.
@@ -134,7 +151,10 @@ class InventoryLoader:
     __path: str
     """The path to the inventory file."""
 
-    def __init__(self, path: str):
+    __serializer: InventorySerializer
+    """The serializer to use."""
+
+    def __init__(self, path: str, serializer: InventorySerializer):
         """
         Initialize the InventoryLoader.
 
@@ -142,6 +162,7 @@ class InventoryLoader:
             path (str): The path to the inventory file.
         """
         self.__path = InventoryLoader._fullpath(path)
+        self.__serializer = serializer
 
     def load_inventory(self) -> Inventory:
         """
@@ -152,7 +173,8 @@ class InventoryLoader:
         """
         try:
             with open(self.__path, 'r', encoding="utf-8") as file:
-                inventory = InventoryLoader._deserialize_inventory(file)
+                inventory = self.__serializer.deserialize(file)
+                InventoryLoader._check_inner_dict(inventory)
                 return Inventory(**inventory)
         except FileNotFoundError:
             return Inventory()
@@ -165,7 +187,7 @@ class InventoryLoader:
         """
         os.makedirs(os.path.dirname(self.__path), exist_ok=True)
         with open(self.__path, 'w', encoding="utf-8") as file:
-            content = InventoryLoader._serialize_inventory(inventory)
+            content = self.__serializer.serialize(inventory)
             json5.dump(content, file)
 
     @staticmethod
@@ -175,29 +197,15 @@ class InventoryLoader:
         return path
 
     @staticmethod
-    def _deserialize_inventory(file: TextIOWrapper) -> dict[str, float]:
-        try:
-            data = json5.load(file)
-        except Exception as e:
-            raise InvalidFileFormat(f"File '{file.path}' could not be loaded as json5") from e
-
+    def _check_inner_dict(data: dict[str, float]) -> dict[str, float]:
         if not isinstance(data, dict):
             raise InvalidFileFormat("Content is not of type dict")
 
-        return InventoryLoader._check_inner_dict(data)
-
-    @staticmethod
-    def _check_inner_dict(data: dict[str, float]) -> dict[str, float]:
         for key, value in data.items():
             if not isinstance(key, str):
                 raise InvalidFileFormat(f"Content key '{key}' is not of type str")
             if not isinstance(value, Number):
                 raise InvalidFileFormat(f"Content value '{value}' for key '{key}' is not a number")
-        return data
-
-    @staticmethod
-    def _serialize_inventory(inventory: Inventory) -> dict[str, float]:
-        return inventory._Inventory__inventory
 
 
 class LiveInventory:
