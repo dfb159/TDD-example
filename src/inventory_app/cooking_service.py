@@ -59,7 +59,7 @@ class CookingService:
         Raises:
             CookingException: If there are not enough ingredients to cook the recipe.
         """
-        if not self.is_cookable(recipe, self.inventory):
+        if not self.is_cookable(recipe):
             raise CookingException("Not enough ingredients to cook the recipe")
 
         for ingredient, quantity in recipe.ingredients.items():

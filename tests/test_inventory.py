@@ -1,8 +1,6 @@
 """Unit tests for the Inventory class."""
-import shutil
-import json5
-from pytest import approx, raises
-from inventory_app.inventory import Inventory, LiveInventory, InvalidFileFormat
+from pytest import approx
+from inventory_app.inventory import Inventory
 
 
 def test__init_empty_inventory():
@@ -22,7 +20,7 @@ def test__add_items():
     inventory.add("sugar")
     assert "sugar" in inventory
     assert len(inventory) == 2
-    assert set(inventory.items()) == set(["milk", "sugar"])
+    assert set(inventory.keys()) == set(["milk", "sugar"])
     assert inventory["milk"] == 1
     assert inventory["sugar"] == 1
 
@@ -207,70 +205,3 @@ def test__unknown_item():
     """If the item does not exist, then the amount is zero."""
     inventory = Inventory()
     assert inventory["milk"] == 0
-
-
-def test__load_from_disk():
-    """Loads an existing file in the correct format."""
-    inventory = Inventory("tests/persistance/valid")
-    assert inventory.items() == set(["milk", "sugar", "cheese"])
-    assert inventory["milk"] == 3
-    assert inventory["sugar"] == approx(1.4)
-    assert inventory["cheese"] == 1
-
-
-def test__load_wrong_from_disk():
-    """Loads an existing file in an invalid format."""
-    raises(InvalidFileFormat, lambda: Inventory("tests/persistance/invalid"))
-
-
-def test__save_to_disk():
-    """Saves an inventory to the disk."""
-    inventory = Inventory()
-    inventory.add("milk", 3)
-    inventory.add("sugar", 1.4)
-    inventory.add("cheese", 1)
-    inventory.save("tests/tmp/save")
-
-    with open("tests/tmp/save.json5", 'r', encoding="utf-8") as f1, open("tests/persistance/valid.json5", 'r', encoding="utf-8") as f2:
-        assert json5.load(f1) == json5.load(f2)
-
-
-def test__disk_roundtrip():
-    """Saves and loads an inventory. Check if same."""
-    inventory = Inventory()
-    inventory.add("milk", 3)
-    inventory.add("sugar", 1.4)
-    inventory.save("tests/tmp/roundtrip")
-
-    loaded_inventory = Inventory("tests/tmp/roundtrip")
-    assert inventory == loaded_inventory
-
-
-def test__live_edit_will_persist():
-    """A live edit with statement will safe the inventory on exit."""
-    shutil.copyfile("tests/persistance/valid.json5", "tests/tmp/live.json5")
-
-    with LiveInventory("tests/tmp/live") as inventory:
-        inventory.add("milk", 2)
-        inventory.remove("sugar", 0.25)
-
-    with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, open("tests/persistance/live.json5", 'r', encoding="utf-8") as f2:
-        assert json5.load(f1) == json5.load(f2)
-
-
-def test__live_edit_twice_will_accumulate():
-    """A live edit with statement will safe the inventory on exit."""
-    shutil.copyfile("tests/persistance/valid.json5", "tests/tmp/live.json5")
-
-    live_inventory = LiveInventory("tests/tmp/live")
-
-    with live_inventory as inventory:
-        inventory.add("milk", 2)
-        inventory.remove("sugar", 0.25)
-
-    with live_inventory as inventory:
-        inventory.add("milk", 3)
-        inventory.add("cheese")
-
-    with open("tests/tmp/live.json5", 'r', encoding="utf-8") as f1, open("tests/persistance/accumulated.json5", 'r', encoding="utf-8") as f2:
-        assert json5.load(f1) == json5.load(f2)

@@ -72,8 +72,13 @@ class Inventory:
     def __contains__(self, item: str):
         return item in self.inventory
 
-    def __eq__(self, other: Self):
-        return self.inventory == other.inventory
+    def __eq__(self, other: Self | dict[str, float]):
+        if isinstance(other, dict):
+            return self.inventory == other
+        elif isinstance(other, Inventory):
+            return self.inventory == other.inventory
+        else:
+            return NotImplemented
 
     def add(self, item: str, quantity: float = 1):
         """Add the given quantity of an item to the inventory.
@@ -177,7 +182,7 @@ class InventoryLoader:
         try:
             data = json5.load(file)
         except Exception as e:
-            raise InvalidFileFormat() from e
+            raise InvalidFileFormat(f"File '{file.path}' could not be loaded as json5") from e
 
         if not isinstance(data, dict):
             raise InvalidFileFormat("Content is not of type dict")
@@ -190,7 +195,7 @@ class InventoryLoader:
             if not isinstance(key, str):
                 raise InvalidFileFormat(f"Content key '{key}' is not of type str")
             if not isinstance(value, Number):
-                raise InvalidFileFormat(f"Content key '{value}' is not a number")
+                raise InvalidFileFormat(f"Content value '{value}' for key '{key}' is not a number")
         return data
 
 
@@ -236,5 +241,5 @@ class LiveInventory:
         if exc_value is not None:
             return False
 
-        self.__inventory.save(self.__path)
+        self.__loader.save_inventory(self.__inventory)
         return True
