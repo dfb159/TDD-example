@@ -152,7 +152,7 @@ class InventoryLoader:
         """
         try:
             with open(self.__path, 'r', encoding="utf-8") as file:
-                inventory = InventoryLoader._load_inventory(file)
+                inventory = InventoryLoader._deserialize_inventory(file)
                 return Inventory(**inventory)
         except FileNotFoundError:
             return Inventory()
@@ -165,7 +165,8 @@ class InventoryLoader:
         """
         os.makedirs(os.path.dirname(self.__path), exist_ok=True)
         with open(self.__path, 'w', encoding="utf-8") as file:
-            json5.dump(inventory, file)
+            content = InventoryLoader._serialize_inventory(inventory)
+            json5.dump(content, file)
 
     @staticmethod
     def _fullpath(path: str):
@@ -174,7 +175,7 @@ class InventoryLoader:
         return path
 
     @staticmethod
-    def _load_inventory(file: TextIOWrapper) -> dict[str, float]:
+    def _deserialize_inventory(file: TextIOWrapper) -> dict[str, float]:
         try:
             data = json5.load(file)
         except Exception as e:
@@ -193,6 +194,10 @@ class InventoryLoader:
             if not isinstance(value, Number):
                 raise InvalidFileFormat(f"Content value '{value}' for key '{key}' is not a number")
         return data
+
+    @staticmethod
+    def _serialize_inventory(inventory: Inventory) -> dict[str, float]:
+        return inventory._Inventory__inventory
 
 
 class LiveInventory:
