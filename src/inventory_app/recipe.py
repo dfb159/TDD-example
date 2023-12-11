@@ -4,7 +4,7 @@ Recipe API.
 This module contains the implementation of the Recipe class, which represents a recipe with ingredients and information about cooking.
 """
 
-from typing import Mapping
+from typing import Mapping, Self
 
 
 class _Ingredients(Mapping):
@@ -21,6 +21,14 @@ class _Ingredients(Mapping):
 
     def __iter__(self):
         return iter(self._data)
+
+    def __eq__(self, other: Self | dict[str, float]):
+        if isinstance(other, dict):
+            return self._data == other
+        elif isinstance(other, _Ingredients):
+            return self._data == other._data
+        else:
+            return NotImplemented
 
     def items(self):
         """Return an iterator over the items in this recipe."""
@@ -66,6 +74,14 @@ class Recipe:
 
     def __getitem__(self, key):
         return self.ingredients[key]
+
+    def __eq__(self, other: Self | dict[str, float]):
+        if isinstance(other, dict):
+            return self.ingredients == other
+        elif isinstance(other, Recipe):
+            return self.ingredients == other.ingredients
+        else:
+            return NotImplemented
 
     def for_portions(self, new_portions: float):
         """
